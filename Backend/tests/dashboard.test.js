@@ -16,7 +16,7 @@ describe('Dashboard API', () => {
       const { user: pm } = await createUser({ role: ROLES.PROJECT_MANAGER });
       await createUser({ role: ROLES.TEAM_MEMBER });
 
-      await Project.create({ name: 'P1', startDate: new Date(), manager: pm._id });
+      await Project.create({ name: 'Project One', startDate: new Date(), manager: pm._id });
 
       const res = await request(app).get('/api/admin/dashboard').set('Authorization', authHeader(adminToken));
 

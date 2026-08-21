@@ -53,7 +53,7 @@ const getManagerDashboard = asyncHandler(async (req, res) => {
     Task.countDocuments({ project: { $in: projectIds }, status: TASK_STATUS.TODO }),
     Project.aggregate([
       { $match: { manager: new mongoose.Types.ObjectId(managerId) } },
-      { $unwind: { path: '$teamMembers', preserveNullAndEmptyArray: true } },
+      { $unwind: { path: '$teamMembers', preserveNullAndEmptyArrays: true } },
       { $group: { _id: '$teamMembers' } },
     ]),
   ]);

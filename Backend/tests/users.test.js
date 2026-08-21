@@ -83,7 +83,7 @@ describe('Users API (Admin only)', () => {
       const res = await request(app)
         .put('/api/users/64b7f3f3f3f3f3f3f3f3f3f3')
         .set('Authorization', authHeader(adminToken))
-        .send({ name: 'X' });
+        .send({ name: 'Ghost User' });
       expect(res.status).toBe(404);
     });
 

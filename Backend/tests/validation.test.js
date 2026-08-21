@@ -35,7 +35,7 @@ describe('Validation edge cases', () => {
 
   it('rejects an invalid task priority enum value', async () => {
     const { token: pmToken, user: pm } = await createUser({ role: ROLES.PROJECT_MANAGER });
-    const project = await Project.create({ name: 'P', startDate: new Date(), manager: pm._id });
+    const project = await Project.create({ name: 'Priority Test', startDate: new Date(), manager: pm._id });
 
     const res = await request(app)
       .post(`/api/projects/${project._id}/tasks`)
