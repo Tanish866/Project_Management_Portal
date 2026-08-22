@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, Eye, EyeOff, LayoutGrid } from "lucide-react";
-import { login } from "../../Redux/slices/AuthSlice";
+import { login } from "../../redux/slices/AuthSlice";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +19,18 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     const result = await dispatch(login(formData));
-    if (login.fulfilled.match(result)) navigate("/");
+
+    if (login.fulfilled.match(result)) {
+      const role = result.payload.user.role;
+
+      if (role === "ADMIN") {
+        navigate("/admin");
+      } else if (role === "PROJECT_MANAGER") {
+        navigate("/manager");
+      } else {
+        navigate("/member");
+      }
+    }
   }
 
   return (

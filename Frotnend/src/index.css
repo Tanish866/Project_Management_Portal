@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 @plugin "daisyui" {
   themes: portal-light --default, portal-dark --prefersdark;
@@ -9,39 +9,39 @@
   name: "portal-light";
   default: true;
   color-scheme: light;
-  --color-base-100: #FBF9F5;
-  --color-base-200: #F1ECE3;
-  --color-base-300: #E3DACB;
-  --color-base-content: #24211B;
-  --color-primary: #423CD6;
-  --color-primary-content: #FBF9F5;
-  --color-secondary: #2F6E5C;
-  --color-secondary-content: #FBF9F5;
-  --color-accent: #C99A3D;
-  --color-accent-content: #24211B;
-  --color-neutral: #24211B;
-  --color-neutral-content: #FBF9F5;
-  --radius-box: 1rem;
-  --radius-field: 0.625rem;
+  --color-base-100: #FFFFFF;
+  --color-base-200: #F5F4FF;
+  --color-base-300: #E7E4FA;
+  --color-base-content: #1A1523;
+  --color-primary: #6D5DFB;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #FF6B9D;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #FF6B9D;
+  --color-accent-content: #FFFFFF;
+  --color-neutral: #1A1523;
+  --color-neutral-content: #F5F4FF;
+  --radius-box: 1.25rem;
+  --radius-field: 0.75rem;
 }
 
 @plugin "daisyui/theme" {
   name: "portal-dark";
   color-scheme: dark;
-  --color-base-100: #16140F;
-  --color-base-200: #1D1A14;
-  --color-base-300: #2B2620;
-  --color-base-content: #F1ECE1;
-  --color-primary: #948CFF;
-  --color-primary-content: #16140F;
-  --color-secondary: #4FA98A;
-  --color-secondary-content: #16140F;
-  --color-accent: #E3B84E;
-  --color-accent-content: #16140F;
-  --color-neutral: #F1ECE1;
-  --color-neutral-content: #16140F;
-  --radius-box: 1rem;
-  --radius-field: 0.625rem;
+  --color-base-100: #0F0D1A;
+  --color-base-200: #17142A;
+  --color-base-300: #211D38;
+  --color-base-content: #EDEBFA;
+  --color-primary: #8B7CFF;
+  --color-primary-content: #0F0D1A;
+  --color-secondary: #FF8AB4;
+  --color-secondary-content: #0F0D1A;
+  --color-accent: #FF8AB4;
+  --color-accent-content: #0F0D1A;
+  --color-neutral: #EDEBFA;
+  --color-neutral-content: #0F0D1A;
+  --radius-box: 1.25rem;
+  --radius-field: 0.75rem;
 }
 
 html {
@@ -53,36 +53,5 @@ body {
 }
 
 .font-display {
-  font-family: 'Sora', sans-serif;
-}
-
-.font-tag {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-}
-
-/* recurring "index tab" mark — clipped bottom-left corner */
-.tab-mark {
-  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 28% 100%, 0% 68%);
-}
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes blobFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(20px, -30px) scale(1.08); }
-}
-
-.animate-fade-up {
-  animation: fadeInUp 0.6s ease both;
-}
-
-.animate-blob {
-  animation: blobFloat 10s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-up, .animate-blob { animation: none; }
+  font-family: 'Space Grotesk', sans-serif;
 }

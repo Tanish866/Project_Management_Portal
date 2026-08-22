@@ -98,6 +98,13 @@ const authSlice = createSlice({
         state.user = null;
         localStorage.removeItem("token");
       })
+      .addCase(logoutUser.rejected, (state) => {
+        // JWT logout is inherently client-side — even if the API call
+        // fails (e.g. token already expired), discard it locally.
+        state.isLoggedin = false;
+        state.user = null;
+        localStorage.removeItem("token");
+      })
 
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.isLoggedin = true;

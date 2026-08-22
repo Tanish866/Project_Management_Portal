@@ -2,7 +2,7 @@ import { useDispatch } from 'react-redux';
 import './App.css'
 import MainRoutes from './Routes/MainRoutes'
 import { useEffect } from 'react';
-import { getCurrentUser } from './Redux/slices/AuthSlice';
+import { getCurrentUser } from './redux/slices/AuthSlice';
 
 function App() {
   const dispatch = useDispatch();
@@ -18,4 +18,5 @@ function App() {
   )
 }
 
-export default App
+export default App;
+
