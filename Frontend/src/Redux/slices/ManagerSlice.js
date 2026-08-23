@@ -7,6 +7,7 @@ const initialState = {
   currentProject: null,
   members: [],
   tasks: [],
+  eligibleMembers: [],
   loading: false,
   error: null,
 };
@@ -91,6 +92,20 @@ export const fetchProjectMembers = createAsyncThunk(
       return res.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Failed to load members");
+    }
+  }
+);
+
+export const fetchEligibleMembers = createAsyncThunk(
+  "manager/fetchEligibleMembers",
+  async (search = "", { rejectWithValue }) => {
+    try {
+      const res = await axiosInstance.get("/users/eligible-members", {
+        params: search ? { search } : {},
+      });
+      return res.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to load users");
     }
   }
 );
@@ -236,6 +251,11 @@ const managerSlice = createSlice({
       .addCase(fetchProjectMembers.fulfilled, (state, action) => {
         state.loading = false;
         state.members = action.payload.members || action.payload;
+      })
+
+      .addCase(fetchEligibleMembers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.eligibleMembers = action.payload.users || action.payload;
       })
 
       .addCase(addProjectMember.fulfilled, (state, action) => {

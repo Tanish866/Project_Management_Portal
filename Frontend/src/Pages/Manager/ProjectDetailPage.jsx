@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, UserPlus, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, UserPlus, Plus, Trash2, X, MessageSquare } from "lucide-react";
 import ManagerLayout from "../../Layouts/ManagerLayout";
 import Modal from "../../components/ui/Modal";
 import FormField from "../../components/ui/FormField";
 import Avatar from "../../components/ui/Avatar";
+import CommentThread from "../../components/CommentThread";
 import Toast from "../../components/Toast";
 import useToast from "../../hooks/useToast";
 import {
   fetchProjectById, fetchProjectMembers, fetchProjectTasks,
   addProjectMember, removeProjectMember,
   createTask, updateTaskStatus, deleteTask,
+  fetchEligibleMembers,
   clearCurrentProject,
 } from "../../Redux/slices/ManagerSlice";
 
@@ -32,6 +34,7 @@ export default function ProjectDetailPage() {
 
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [openCommentsFor, setOpenCommentsFor] = useState(null);
 
   useEffect(() => {
     dispatch(fetchProjectById(id));
@@ -42,10 +45,12 @@ export default function ProjectDetailPage() {
 
   async function handleRemoveMember(userId) {
     const result = await dispatch(removeProjectMember({ projectId: id, userId }));
-    showToast(
-      removeProjectMember.fulfilled.match(result) ? "Member removed" : result.payload || "Failed to remove",
-      removeProjectMember.fulfilled.match(result) ? "success" : "error"
-    );
+    if (removeProjectMember.fulfilled.match(result)) {
+      dispatch(fetchProjectMembers(id));
+      showToast("Member removed");
+    } else {
+      showToast(result.payload || "Failed to remove", "error");
+    }
   }
 
   async function handleStatusChange(taskId, status) {
@@ -135,32 +140,48 @@ export default function ProjectDetailPage() {
               <p className="py-6 text-center text-sm text-base-content/40">No tasks yet.</p>
             ) : (
               tasks.map((t) => (
-                <div key={t._id} className="flex items-center justify-between gap-3 rounded-xl border border-base-300 px-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-base-content">{t.title}</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${PRIORITY_COLORS[t.priority]}`}>
-                        {t.priority}
-                      </span>
-                      {t.deadline && (
-                        <span className="text-[11px] text-base-content/40">
-                          Due {new Date(t.deadline).toLocaleDateString()}
+                <div key={t._id} className="rounded-xl border border-base-300">
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-base-content">{t.title}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${PRIORITY_COLORS[t.priority]}`}>
+                          {t.priority}
                         </span>
-                      )}
+                        {t.deadline && (
+                          <span className="text-[11px] text-base-content/40">
+                            Due {new Date(t.deadline).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    <select
+                      value={t.status}
+                      onChange={(e) => handleStatusChange(t._id, e.target.value)}
+                      className="select select-bordered select-sm"
+                    >
+                      {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                    </select>
+
+                    <button
+                      onClick={() => setOpenCommentsFor((prev) => (prev === t._id ? null : t._id))}
+                      className={`btn btn-ghost btn-circle btn-sm ${openCommentsFor === t._id ? "text-primary" : ""}`}
+                      title="Comments"
+                    >
+                      <MessageSquare size={15} />
+                    </button>
+
+                    <button onClick={() => handleDeleteTask(t._id)} className="btn btn-ghost btn-circle btn-sm text-red-500">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
 
-                  <select
-                    value={t.status}
-                    onChange={(e) => handleStatusChange(t._id, e.target.value)}
-                    className="select select-bordered select-sm"
-                  >
-                    {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                  </select>
-
-                  <button onClick={() => handleDeleteTask(t._id)} className="btn btn-ghost btn-circle btn-sm text-red-500">
-                    <Trash2 size={14} />
-                  </button>
+                  {openCommentsFor === t._id && (
+                    <div className="border-t border-base-300 bg-base-200/30 p-4">
+                      <CommentThread taskId={t._id} />
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -173,11 +194,13 @@ export default function ProjectDetailPage() {
           onClose={() => setShowMemberModal(false)}
           onSubmit={async (userId) => {
             const result = await dispatch(addProjectMember({ projectId: id, userId }));
-            showToast(
-              addProjectMember.fulfilled.match(result) ? "Member added" : result.payload || "Failed to add member",
-              addProjectMember.fulfilled.match(result) ? "success" : "error"
-            );
-            if (addProjectMember.fulfilled.match(result)) setShowMemberModal(false);
+            if (addProjectMember.fulfilled.match(result)) {
+              await dispatch(fetchProjectMembers(id));
+              showToast("Member added");
+              setShowMemberModal(false);
+            } else {
+              showToast(result.payload || "Failed to add member", "error");
+            }
           }}
         />
       )}
@@ -203,25 +226,83 @@ export default function ProjectDetailPage() {
 }
 
 function AddMemberModal({ onClose, onSubmit }) {
-  const [userId, setUserId] = useState("");
+  const dispatch = useDispatch();
+  const { eligibleMembers, loading: searching } = useSelector((state) => state.manager);
+
+  const [search, setSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      dispatch(fetchEligibleMembers(search));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [dispatch, search]);
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!selectedUser) return;
     setSaving(true);
-    await onSubmit(userId);
+    await onSubmit(selectedUser._id);
     setSaving(false);
   }
 
   return (
     <Modal title="Add Team Member" onClose={onClose}>
-      <p className="mb-3 text-xs text-base-content/50">
-        Enter the User ID of a registered Team Member (ask your Admin for their ID if you don't have it).
-      </p>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <FormField label="User ID" type="text" value={userId} onChange={(e) => setUserId(e.target.value)} required />
-        <button type="submit" disabled={saving} className="btn btn-primary w-full rounded-xl">
-          {saving ? "Adding..." : "Add Member"}
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-base-content/40">
+            Search by name or email
+          </label>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setSelectedUser(null);
+            }}
+            placeholder="Type to search team members..."
+            className="w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-sm text-base-content outline-none focus:border-primary"
+          />
+        </div>
+
+        <div className="max-h-52 overflow-y-auto rounded-lg border border-base-300">
+          {searching ? (
+            <p className="px-3 py-4 text-center text-sm text-base-content/40">Searching...</p>
+          ) : eligibleMembers.length === 0 ? (
+            <p className="px-3 py-4 text-center text-sm text-base-content/40">No team members found.</p>
+          ) : (
+            eligibleMembers.map((u) => (
+              <button
+                key={u._id}
+                type="button"
+                onClick={() => setSelectedUser(u)}
+                className={`flex w-full items-center gap-2.5 border-b border-base-300 px-3 py-2.5 text-left last:border-0 hover:bg-base-200 ${
+                  selectedUser?._id === u._id ? "bg-primary/10" : ""
+                }`}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  {u.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-base-content">{u.name}</p>
+                  <p className="truncate text-xs text-base-content/40">{u.email}</p>
+                </div>
+                {selectedUser?._id === u._id && (
+                  <span className="text-xs font-medium text-primary">Selected</span>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={!selectedUser || saving}
+          className="btn btn-primary w-full rounded-xl disabled:opacity-50"
+        >
+          {saving ? "Adding..." : selectedUser ? `Add ${selectedUser.name}` : "Select a member first"}
         </button>
       </form>
     </Modal>
