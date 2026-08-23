@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Sun, Moon, Menu, X, User } from "lucide-react";
-import { logoutUser } from "../../redux/slices/AuthSlice";
+import { Sun, Moon, Menu, X, User, LayoutDashboard } from "lucide-react";
+import { logoutUser } from "../../Redux/slices/AuthSlice";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "portal-light");
 
   const dispatch = useDispatch();
@@ -20,14 +21,26 @@ export default function Navbar() {
   function toggleMenu() {
     setIsMenuOpen((prev) => !prev);
   }
+
   function closeMenu() {
     setIsMenuOpen(false);
   }
+
   function toggleTheme() {
     setTheme((prev) => (prev === "portal-light" ? "portal-dark" : "portal-light"));
   }
-  function handleLogout() {
-    dispatch(logoutUser());
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    await dispatch(logoutUser());
+    setLoggingOut(false);
+  }
+
+  function getDashboardPath(role) {
+    if (role === "ADMIN") return "/admin";
+    if (role === "PROJECT_MANAGER") return "/manager";
+    return "/member";
   }
 
   return (
@@ -52,6 +65,7 @@ export default function Navbar() {
           <li><a href="#home" className="text-sm font-medium text-primary">Home</a></li>
           <li><a href="#about" className="text-sm font-medium text-base-content/70 hover:text-base-content">About</a></li>
           <li><a href="#features" className="text-sm font-medium text-base-content/70 hover:text-base-content">Features</a></li>
+          <li><a href="#dashboard" className="text-sm font-medium text-base-content/70 hover:text-base-content">Dashboard</a></li>
           <li><a href="#contact" className="text-sm font-medium text-base-content/70 hover:text-base-content">Contact</a></li>
         </ul>
       </div>
@@ -62,16 +76,29 @@ export default function Navbar() {
         </button>
 
         {isLoggedin ? (
-          <div className="dropdown dropdown-end hidden md:block">
-            <div tabIndex={0} role="button" className="flex cursor-pointer items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-content">
-                {userInitial}
+          <>
+            <Link
+              to={getDashboardPath(user?.role)}
+              className="btn btn-primary hidden rounded-full px-6 md:flex"
+            >
+              <LayoutDashboard size={16} /> Dashboard
+            </Link>
+
+            <div className="dropdown dropdown-end hidden md:block">
+              <div tabIndex={0} role="button" className="flex cursor-pointer items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-content">
+                  {userInitial}
+                </div>
               </div>
+              <ul tabIndex={0} className="dropdown-content menu z-10 mt-3 w-40 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
+                <li>
+                  <button onClick={handleLogout} disabled={loggingOut}>
+                    {loggingOut ? "Logging out..." : "Logout"}
+                  </button>
+                </li>
+              </ul>
             </div>
-            <ul tabIndex={0} className="dropdown-content menu z-10 mt-3 w-40 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
-              <li><button onClick={handleLogout}>Logout</button></li>
-            </ul>
-          </div>
+          </>
         ) : (
           <Link to="/login" className="btn btn-primary hidden rounded-full px-7 md:flex">
             <User size={16} /> Login / Register
@@ -89,7 +116,18 @@ export default function Navbar() {
             <li><a href="#dashboard" onClick={closeMenu}>Dashboard</a></li>
             <li><a href="#contact" onClick={closeMenu}>Contact</a></li>
             {isLoggedin ? (
-              <li><button onClick={() => { handleLogout(); closeMenu(); }}>Logout</button></li>
+              <>
+                <li>
+                  <Link to={getDashboardPath(user?.role)} onClick={closeMenu}>
+                    Go to Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <button onClick={() => { handleLogout(); closeMenu(); }} disabled={loggingOut}>
+                    {loggingOut ? "Logging out..." : "Logout"}
+                  </button>
+                </li>
+              </>
             ) : (
               <li><Link to="/login" onClick={closeMenu}>Login / Register</Link></li>
             )}

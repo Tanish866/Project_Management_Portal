@@ -1,27 +1,17 @@
 import { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  LayoutGrid,
-  Users,
-  LogOut,
-  Sun,
-  Moon,
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { logoutUser } from "../redux/slices/AuthSlice";
+import { LogOut, Sun, Moon, Menu, X, ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
+import { logoutUser } from "../Redux/slices/AuthSlice";
 
-export default function AdminLayout({ children }) {
+export default function DashboardLayout({ navItems, roleLabel, children }) {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "portal-light");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("adminSidebarCollapsed") === "true");
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
 
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "A";
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -29,25 +19,12 @@ export default function AdminLayout({ children }) {
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem("adminSidebarCollapsed", collapsed);
+    localStorage.setItem("sidebarCollapsed", collapsed);
   }, [collapsed]);
-
-  function toggleTheme() {
-    setTheme((prev) => (prev === "portal-light" ? "portal-dark" : "portal-light"));
-  }
-
-  function toggleCollapse() {
-    setCollapsed((prev) => !prev);
-  }
 
   function handleLogout() {
     dispatch(logoutUser());
   }
-
-  const navItems = [
-    { to: "/admin", label: "Dashboard", icon: <LayoutGrid size={18} />, end: true },
-    { to: "/admin/users", label: "Users", icon: <Users size={18} /> },
-  ];
 
   return (
     <div className="flex min-h-screen bg-base-100">
@@ -79,11 +56,7 @@ export default function AdminLayout({ children }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
                   collapsed ? "justify-center px-0" : ""
-                } ${
-                  isActive
-                    ? "bg-primary text-primary-content"
-                    : "text-base-content/70 hover:bg-base-200"
-                }`
+                } ${isActive ? "bg-primary text-primary-content" : "text-base-content/70 hover:bg-base-200"}`
               }
             >
               {item.icon}
@@ -101,7 +74,7 @@ export default function AdminLayout({ children }) {
               <>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-base-content">{user?.name}</p>
-                  <p className="text-xs text-base-content/40">Admin</p>
+                  <p className="text-xs text-base-content/40">{roleLabel}</p>
                 </div>
                 <button onClick={handleLogout} className="btn btn-ghost btn-circle btn-sm" aria-label="Logout">
                   <LogOut size={16} />
@@ -112,34 +85,34 @@ export default function AdminLayout({ children }) {
         </div>
 
         <button
-          onClick={toggleCollapse}
-          className="absolute -right-3 top-20 hidden h-6 w-6 items-center cursor-pointer justify-center rounded-full border border-base-300 bg-base-100 text-base-content/50 opacity-0 shadow-sm transition-opacity hover:text-base-content group-hover/sidebar:opacity-100 lg:flex"
+          onClick={() => setCollapsed((prev) => !prev)}
+          className="absolute -right-3 top-20 hidden h-6 w-6 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/50 opacity-0 shadow-sm transition-opacity hover:text-base-content group-hover/sidebar:opacity-100 lg:flex"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </aside>
 
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-20 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 z-20 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       <div className="flex-1 transition-all duration-300">
         <header className="flex items-center justify-end border-b border-base-300 bg-base-100 px-6 py-4">
           <button className="btn btn-ghost btn-circle mr-auto lg:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu size={20} />
           </button>
-
           <div className="flex items-center gap-3">
             <Link to="/" className="hidden text-sm text-base-content/50 hover:text-base-content lg:block">
               ← Back to site
             </Link>
-            <button className="btn btn-ghost btn-circle border border-base-300" onClick={toggleTheme} aria-label="Toggle theme">
+            <button
+              className="btn btn-ghost btn-circle border border-base-300"
+              onClick={() => setTheme((prev) => (prev === "portal-light" ? "portal-dark" : "portal-light"))}
+              aria-label="Toggle theme"
+            >
               {theme === "portal-light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
           </div>
         </header>
-
         <main className="p-6">{children}</main>
       </div>
     </div>
