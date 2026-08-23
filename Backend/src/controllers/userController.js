@@ -2,6 +2,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { sendResponse } = require('../utils/ApiResponse');
 const User = require('../models/User');
+const { ROLES } = require('../config/constants');
 
 /**
  * @desc  Get all users (supports optional ?role= filter)
@@ -26,6 +27,32 @@ const getUserById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) throw ApiError.notFound('User not found');
   sendResponse(res, 200, 'User retrieved successfully', { user });
+});
+
+/**
+ * @desc  Get users with the TEAM_MEMBER role, for Project Managers/Admins to
+ *        pick from when adding members to a project. Supports optional
+ *        ?search= for a case-insensitive partial match on name or email.
+ * @route GET /api/users/eligible-members
+ * @access Private/Admin, ProjectManager
+ */
+const getEligibleMembers = asyncHandler(async (req, res) => {
+  const filter = { role: ROLES.TEAM_MEMBER };
+
+  const search = req.query.search ? String(req.query.search).trim() : '';
+  if (search) {
+    // Escape regex special characters so arbitrary user input can't break the pattern
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escaped, 'i');
+    filter.$or = [{ name: searchRegex }, { email: searchRegex }];
+  }
+
+  const users = await User.find(filter).select('_id name email');
+
+  sendResponse(res, 200, 'Eligible team members retrieved successfully', {
+    count: users.length,
+    users,
+  });
 });
 
 /**
@@ -107,6 +134,7 @@ const updateUserRole = asyncHandler(async (req, res) => {
 module.exports = {
   getUsers,
   getUserById,
+  getEligibleMembers,
   createUser,
   updateUser,
   updateUserStatus,

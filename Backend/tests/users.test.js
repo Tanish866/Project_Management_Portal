@@ -149,4 +149,58 @@ describe('Users API (Admin only)', () => {
       expect(res.status).toBe(400);
     });
   });
+    describe('GET /api/users/eligible-members', () => {
+    it('allows a project manager to list TEAM_MEMBER users', async () => {
+      const { token: pmToken } = await createUser({ role: ROLES.PROJECT_MANAGER });
+      await createUser({ name: 'Alice Team', email: 'alice@example.com', role: ROLES.TEAM_MEMBER });
+      await createUser({ name: 'Bob Team', email: 'bob@example.com', role: ROLES.TEAM_MEMBER });
+      await createUser({ role: ROLES.PROJECT_MANAGER }); // should not appear
+
+      const res = await request(app)
+        .get('/api/users/eligible-members')
+        .set('Authorization', authHeader(pmToken));
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.users.length).toBe(2);
+      expect(res.body.data.users.every((u) => u.email && u.name)).toBe(true);
+      expect(res.body.data.users[0].password).toBeUndefined();
+    });
+
+    it('allows an admin to list TEAM_MEMBER users', async () => {
+      const { token: adminToken } = await createUser({ role: ROLES.ADMIN });
+      await createUser({ role: ROLES.TEAM_MEMBER });
+
+      const res = await request(app)
+        .get('/api/users/eligible-members')
+        .set('Authorization', authHeader(adminToken));
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.users.length).toBe(1);
+    });
+
+    it('forbids a team member from accessing this route', async () => {
+      const { token } = await createUser({ role: ROLES.TEAM_MEMBER });
+      const res = await request(app).get('/api/users/eligible-members').set('Authorization', authHeader(token));
+      expect(res.status).toBe(403);
+    });
+
+    it('filters by ?search= on name or email (case-insensitive)', async () => {
+      const { token: pmToken } = await createUser({ role: ROLES.PROJECT_MANAGER });
+      await createUser({ name: 'Priya Sharma', email: 'priya@example.com', role: ROLES.TEAM_MEMBER });
+      await createUser({ name: 'Rahul Verma', email: 'rahul@example.com', role: ROLES.TEAM_MEMBER });
+
+      const res = await request(app)
+        .get('/api/users/eligible-members?search=priya')
+        .set('Authorization', authHeader(pmToken));
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.users.length).toBe(1);
+      expect(res.body.data.users[0].name).toBe('Priya Sharma');
+    });
+
+    it('rejects unauthenticated requests', async () => {
+      const res = await request(app).get('/api/users/eligible-members');
+      expect(res.status).toBe(401);
+    });
+  });
 });

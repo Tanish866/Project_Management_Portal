@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getUsers,
   getUserById,
+  getEligibleMembers,
   createUser,
   updateUser,
   updateUserStatus,
@@ -20,7 +21,10 @@ const {
 
 const router = express.Router();
 
-router.use(protect, authorize(ROLES.ADMIN));
+// Only authentication is enforced here; each route below sets its own
+// allowed roles via authorize(...), since not all /users routes are
+// admin-only (see GET /eligible-members).
+router.use(protect);
 
 /**
  * @openapi
@@ -58,8 +62,30 @@ router.use(protect, authorize(ROLES.ADMIN));
  *     responses:
  *       201: { description: User created successfully }
  */
-router.get('/', getUsers);
-router.post('/', createUserValidator, validate, createUser);
+router.get('/', authorize(ROLES.ADMIN), getUsers);
+router.post('/', authorize(ROLES.ADMIN), createUserValidator, validate, createUser);
+
+/**
+ * @openapi
+ * /api/users/eligible-members:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get users with the TEAM_MEMBER role (Admin or Project Manager only)
+ *     description: >
+ *       Used by Project Managers (and Admins) to find candidate users when
+ *       adding team members to a project. Only returns _id, name and email.
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: Case-insensitive partial match against name or email
+ *     responses:
+ *       200: { description: Eligible team members retrieved successfully }
+ *       401: { description: Not authenticated }
+ *       403: { description: Forbidden }
+ */
+router.get('/eligible-members', authorize(ROLES.ADMIN, ROLES.PROJECT_MANAGER), getEligibleMembers);
 
 /**
  * @openapi
@@ -88,8 +114,8 @@ router.post('/', createUserValidator, validate, createUser);
  *     responses:
  *       200: { description: User updated successfully }
  */
-router.get('/:id', getUserValidator, validate, getUserById);
-router.put('/:id', updateUserValidator, validate, updateUser);
+router.get('/:id', authorize(ROLES.ADMIN), getUserValidator, validate, getUserById);
+router.put('/:id', authorize(ROLES.ADMIN), updateUserValidator, validate, updateUser);
 
 /**
  * @openapi
@@ -115,7 +141,7 @@ router.put('/:id', updateUserValidator, validate, updateUser);
  *     responses:
  *       200: { description: User status updated successfully }
  */
-router.patch('/:id/status', updateStatusValidator, validate, updateUserStatus);
+router.patch('/:id/status', authorize(ROLES.ADMIN), updateStatusValidator, validate, updateUserStatus);
 
 /**
  * @openapi
@@ -141,6 +167,6 @@ router.patch('/:id/status', updateStatusValidator, validate, updateUserStatus);
  *     responses:
  *       200: { description: User role updated successfully }
  */
-router.patch('/:id/role', updateRoleValidator, validate, updateUserRole);
+router.patch('/:id/role', authorize(ROLES.ADMIN), updateRoleValidator, validate, updateUserRole);
 
 module.exports = router;
