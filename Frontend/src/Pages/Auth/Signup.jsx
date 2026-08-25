@@ -178,16 +178,7 @@ export default function Signup() {
             </button>
           </form>
 
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-base-300" />
-            <span className="font-tag text-[11px] uppercase tracking-widest text-base-content/40">or</span>
-            <div className="h-px flex-1 bg-base-300" />
-          </div>
-
-          <button className="flex w-full items-center justify-center gap-2 rounded-field border border-base-300 py-2.5 text-sm font-medium text-base-content hover:bg-base-200">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-4 w-4" />
-            Sign up with Google
-          </button>
+          
 
           <p className="mt-6 text-center text-sm text-base-content/50">
             Already have an account?{" "}

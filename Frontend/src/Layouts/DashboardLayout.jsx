@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { LogOut, Sun, Moon, Menu, X, ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
+import { LogOut, Sun, Moon, Menu, X, ChevronLeft, ChevronRight, User as UserIcon } from "lucide-react";
 import { logoutUser } from "../Redux/slices/AuthSlice";
 
 export default function DashboardLayout({ navItems, roleLabel, children }) {
@@ -10,6 +10,7 @@ export default function DashboardLayout({ navItems, roleLabel, children }) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
@@ -24,6 +25,7 @@ export default function DashboardLayout({ navItems, roleLabel, children }) {
 
   function handleLogout() {
     dispatch(logoutUser());
+    navigate("/login");
   }
 
   return (
@@ -66,6 +68,15 @@ export default function DashboardLayout({ navItems, roleLabel, children }) {
         </nav>
 
         <div className="border-t border-base-300 p-4">
+          {!collapsed && (
+            <Link
+              to="/profile"
+              className="mb-1 flex items-center gap-2 rounded-xl px-2 py-2 text-sm text-base-content/70 hover:bg-base-200"
+            >
+              <UserIcon size={16} /> Profile
+            </Link>
+          )}
+
           <div className={`flex items-center gap-3 rounded-xl px-2 py-2 ${collapsed ? "justify-center px-0" : ""}`}>
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-content">
               {userInitial}

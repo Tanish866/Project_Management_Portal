@@ -12,6 +12,9 @@ import MyProjectsPage from "../Pages/Member/MyProjectsPage";
 import ProjectTasksPage from "../Pages/Member/ProjectTasksPage";
 import TaskDetailPage from "../Pages/Member/TaskDetailPage";
 import ProtectedRoute from "../components/ProtectedRoute";
+import ForgotPassword from "../Pages/Auth/ForgotPassword";
+import ResetPassword from "../Pages/Auth/ResetPassword";
+import Profile from "../Pages/Profile";
 
 function MainRoutes(){
     return (
@@ -31,6 +34,9 @@ function MainRoutes(){
             <Route path="/member/projects" element={<ProtectedRoute allowedRoles={["TEAM_MEMBER"]}><MyProjectsPage /></ProtectedRoute>} />
             <Route path="/member/projects/:id" element={<ProtectedRoute allowedRoles={["TEAM_MEMBER"]}><ProjectTasksPage /></ProtectedRoute>} />
             <Route path="/member/tasks/:id" element={<ProtectedRoute allowedRoles={["TEAM_MEMBER"]}><TaskDetailPage /></ProtectedRoute>} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         </Routes>
     )
 }

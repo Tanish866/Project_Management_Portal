@@ -55,6 +55,53 @@ export const getCurrentUser = createAsyncThunk(
     }
   }
 );
+export const forgotPassword = createAsyncThunk(
+  "auth/forgotPassword",
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post("/auth/forgot-password", { email });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Request failed");
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async ({ token, password }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post(`/auth/reset-password/${token}`, { password });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Reset failed");
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async ({ currentPassword, newPassword }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put("/auth/change-password", { currentPassword, newPassword });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to change password");
+    }
+  }
+);
+
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async ({ name, email }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put("/auth/me", { name, email });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to update profile");
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
@@ -104,6 +151,9 @@ const authSlice = createSlice({
         state.isLoggedin = false;
         state.user = null;
         localStorage.removeItem("token");
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.user = action.payload.user;
       })
 
       .addCase(getCurrentUser.fulfilled, (state, action) => {

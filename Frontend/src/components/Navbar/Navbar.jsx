@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Sun, Moon, Menu, X, User, LayoutDashboard } from "lucide-react";
 import { logoutUser } from "../../Redux/slices/AuthSlice";
@@ -10,6 +10,7 @@ export default function Navbar() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "portal-light");
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isLoggedin, user } = useSelector((state) => state.auth);
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
@@ -35,6 +36,7 @@ export default function Navbar() {
     setLoggingOut(true);
     await dispatch(logoutUser());
     setLoggingOut(false);
+    navigate("/login");
   }
 
   function getDashboardPath(role) {
@@ -92,6 +94,9 @@ export default function Navbar() {
               </div>
               <ul tabIndex={0} className="dropdown-content menu z-10 mt-3 w-40 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
                 <li>
+                  <Link to="/profile">Profile</Link>
+                </li>
+                <li>
                   <button onClick={handleLogout} disabled={loggingOut}>
                     {loggingOut ? "Logging out..." : "Logout"}
                   </button>
@@ -121,6 +126,9 @@ export default function Navbar() {
                   <Link to={getDashboardPath(user?.role)} onClick={closeMenu}>
                     Go to Dashboard
                   </Link>
+                </li>
+                <li>
+                  <Link to="/profile" onClick={closeMenu}>Profile</Link>
                 </li>
                 <li>
                   <button onClick={() => { handleLogout(); closeMenu(); }} disabled={loggingOut}>

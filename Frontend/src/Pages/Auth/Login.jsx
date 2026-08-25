@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, Eye, EyeOff, LayoutGrid } from "lucide-react";
-import { login } from "../../redux/slices/AuthSlice";
+import { login } from "../../Redux/slices/AuthSlice";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -116,7 +116,9 @@ export default function Login() {
                 <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" />
                 Remember me
               </label>
-              <Link to="/forgot-password" className="font-medium text-primary">Forgot Password?</Link>
+              <Link to="/forgot-password" className="font-medium text-primary hover:opacity-80">
+                Forgot password?
+              </Link>
             </div>
 
             <button
@@ -128,16 +130,7 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-base-300" />
-            <span className="font-tag text-[11px] uppercase tracking-widest text-base-content/40">or</span>
-            <div className="h-px flex-1 bg-base-300" />
-          </div>
-
-          <button className="flex w-full items-center justify-center gap-2 rounded-field border border-base-300 py-2.5 text-sm font-medium text-base-content hover:bg-base-200">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-4 w-4" />
-            Login with Google
-          </button>
+          
 
           <p className="mt-6 text-center text-sm text-base-content/50">
             Don't have an account?{" "}
