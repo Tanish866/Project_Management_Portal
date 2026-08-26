@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { FolderKanban, ListChecks, CheckCircle2, Clock, ArrowRight } from "lucide-react";
 import MemberLayout from "../../Layouts/MemberLayout";
+import EmptyState from "../../components/ui/EmptyState";
 import { fetchMemberDashboard, fetchMyProjects } from "../../Redux/slices/MemberSlice";
 
 export default function MemberDashboard() {
@@ -48,7 +49,11 @@ export default function MemberDashboard() {
 
         <div className="mt-4 space-y-1">
           {projects.length === 0 ? (
-            <p className="py-6 text-center text-sm text-base-content/40">You're not part of any project yet.</p>
+            <EmptyState
+              icon={<FolderKanban size={22} />}
+              title="You're not part of any project yet"
+              description="Your manager will add you to a project soon."
+            />
           ) : (
             projects.slice(0, 5).map((p) => (
               <Link

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, UserPlus, Plus, Trash2, X, MessageSquare } from "lucide-react";
+import { ArrowLeft, UserPlus, Plus, Trash2, X, MessageSquare, Pencil } from "lucide-react";
 import ManagerLayout from "../../Layouts/ManagerLayout";
 import Modal from "../../components/ui/Modal";
 import FormField from "../../components/ui/FormField";
@@ -12,7 +12,7 @@ import useToast from "../../hooks/useToast";
 import {
   fetchProjectById, fetchProjectMembers, fetchProjectTasks,
   addProjectMember, removeProjectMember,
-  createTask, updateTaskStatus, deleteTask,
+  createTask, updateTask, updateTaskStatus, deleteTask,
   fetchEligibleMembers,
   clearCurrentProject,
 } from "../../Redux/slices/ManagerSlice";
@@ -34,6 +34,7 @@ export default function ProjectDetailPage() {
 
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [openCommentsFor, setOpenCommentsFor] = useState(null);
 
   useEffect(() => {
@@ -67,6 +68,16 @@ export default function ProjectDetailPage() {
       deleteTask.fulfilled.match(result) ? "Task deleted" : result.payload || "Failed to delete",
       deleteTask.fulfilled.match(result) ? "success" : "error"
     );
+  }
+
+  function openEditTask(task) {
+    setEditingTask(task);
+    setShowTaskModal(true);
+  }
+
+  function openNewTask() {
+    setEditingTask(null);
+    setShowTaskModal(true);
   }
 
   if (!currentProject) {
@@ -128,7 +139,7 @@ export default function ProjectDetailPage() {
         <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm lg:col-span-2">
           <div className="flex items-center justify-between">
             <p className="font-semibold text-base-content">Tasks</p>
-            <button onClick={() => setShowTaskModal(true)} className="btn btn-primary btn-sm rounded-lg">
+            <button onClick={openNewTask} className="btn btn-primary btn-sm rounded-lg">
               <Plus size={14} /> New Task
             </button>
           </div>
@@ -163,6 +174,10 @@ export default function ProjectDetailPage() {
                     >
                       {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
                     </select>
+
+                    <button onClick={() => openEditTask(t)} className="btn btn-ghost btn-circle btn-sm" title="Edit task">
+                      <Pencil size={14} />
+                    </button>
 
                     <button
                       onClick={() => setOpenCommentsFor((prev) => (prev === t._id ? null : t._id))}
@@ -207,15 +222,23 @@ export default function ProjectDetailPage() {
 
       {showTaskModal && (
         <TaskFormModal
+          task={editingTask}
           members={members}
-          onClose={() => setShowTaskModal(false)}
+          onClose={() => { setShowTaskModal(false); setEditingTask(null); }}
           onSubmit={async (formData) => {
-            const result = await dispatch(createTask({ projectId: id, ...formData }));
+            const action = editingTask
+              ? updateTask({ id: editingTask._id, ...formData })
+              : createTask({ projectId: id, ...formData });
+            const result = await dispatch(action);
+            const isSuccess = editingTask ? updateTask.fulfilled.match(result) : createTask.fulfilled.match(result);
             showToast(
-              createTask.fulfilled.match(result) ? "Task created" : result.payload || "Failed to create task",
-              createTask.fulfilled.match(result) ? "success" : "error"
+              isSuccess ? `Task ${editingTask ? "updated" : "created"}` : result.payload || "Something went wrong",
+              isSuccess ? "success" : "error"
             );
-            if (createTask.fulfilled.match(result)) setShowTaskModal(false);
+            if (isSuccess) {
+              setShowTaskModal(false);
+              setEditingTask(null);
+            }
           }}
         />
       )}
@@ -309,8 +332,14 @@ function AddMemberModal({ onClose, onSubmit }) {
   );
 }
 
-function TaskFormModal({ members, onClose, onSubmit }) {
-  const [form, setForm] = useState({ title: "", description: "", priority: "MEDIUM", deadline: "", assignedTo: "" });
+function TaskFormModal({ task, members, onClose, onSubmit }) {
+  const [form, setForm] = useState({
+    title: task?.title || "",
+    description: task?.description || "",
+    priority: task?.priority || "MEDIUM",
+    deadline: task?.deadline?.slice(0, 10) || "",
+    assignedTo: task?.assignedTo?._id || task?.assignedTo || "",
+  });
   const [saving, setSaving] = useState(false);
 
   function handleChange(e) {
@@ -325,7 +354,7 @@ function TaskFormModal({ members, onClose, onSubmit }) {
   }
 
   return (
-    <Modal title="New Task" onClose={onClose}>
+    <Modal title={task ? "Edit Task" : "New Task"} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-3">
         <FormField label="Title" type="text" name="title" value={form.title} onChange={handleChange} required />
         <div>
@@ -352,7 +381,7 @@ function TaskFormModal({ members, onClose, onSubmit }) {
           </select>
         </div>
         <button type="submit" disabled={saving} className="btn btn-primary w-full rounded-xl">
-          {saving ? "Creating..." : "Create Task"}
+          {saving ? "Saving..." : task ? "Save Changes" : "Create Task"}
         </button>
       </form>
     </Modal>

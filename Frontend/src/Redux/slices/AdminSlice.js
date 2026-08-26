@@ -4,6 +4,7 @@ import axiosInstance from "../../config/axiosInstance";
 const initialState = {
   dashboard: null,
   users: [],
+  projects: [],   
   loading: false,
   error: null,
 };
@@ -16,6 +17,17 @@ export const fetchAdminDashboard = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Failed to load dashboard");
+    }
+  }
+);
+export const fetchAllProjects = createAsyncThunk(
+  "admin/fetchAllProjects",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/projects");
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to load projects");
     }
   }
 );
@@ -130,6 +142,10 @@ const adminSlice = createSlice({
         const updated = action.payload.user;
         const idx = state.users.findIndex((u) => u._id === updated._id);
         if (idx !== -1) state.users[idx] = updated;
+      })
+      .addCase(fetchAllProjects.fulfilled, (state, action) => {
+        state.loading = false;
+        state.projects = action.payload.projects || action.payload;
       })
 
       .addCase(updateUserRole.fulfilled, (state, action) => {

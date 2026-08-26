@@ -31,6 +31,30 @@ export const addTaskComment = createAsyncThunk(
   }
 );
 
+export const editTaskComment = createAsyncThunk(
+  "comments/editTaskComment",
+  async ({ taskId, commentId, message }, { rejectWithValue }) => {
+    try {
+      const res = await axiosInstance.put(`/comments/${commentId}`, { message });
+      return { taskId, comment: res.data.data.comment || res.data.data };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to edit comment");
+    }
+  }
+);
+
+export const deleteTaskComment = createAsyncThunk(
+  "comments/deleteTaskComment",
+  async ({ taskId, commentId }, { rejectWithValue }) => {
+    try {
+      await axiosInstance.delete(`/comments/${commentId}`);
+      return { taskId, commentId };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to delete comment");
+    }
+  }
+);
+
 const commentSlice = createSlice({
   name: "comments",
   initialState,
@@ -60,6 +84,28 @@ const commentSlice = createSlice({
         state.byTaskId[taskId].push(comment);
       })
       .addCase(addTaskComment.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      .addCase(editTaskComment.fulfilled, (state, action) => {
+        const { taskId, comment } = action.payload;
+        const list = state.byTaskId[taskId];
+        if (list) {
+          const idx = list.findIndex((c) => c._id === comment._id);
+          if (idx !== -1) list[idx] = comment;
+        }
+      })
+      .addCase(editTaskComment.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      .addCase(deleteTaskComment.fulfilled, (state, action) => {
+        const { taskId, commentId } = action.payload;
+        if (state.byTaskId[taskId]) {
+          state.byTaskId[taskId] = state.byTaskId[taskId].filter((c) => c._id !== commentId);
+        }
+      })
+      .addCase(deleteTaskComment.rejected, (state, action) => {
         state.error = action.payload;
       });
   },

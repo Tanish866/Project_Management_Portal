@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Plus, MoreVertical, Trash2, Pencil } from "lucide-react";
+import { Plus, MoreVertical, Trash2, Pencil, FolderKanban } from "lucide-react";
 import ManagerLayout from "../../Layouts/ManagerLayout";
 import Modal from "../../components/ui/Modal";
 import FormField from "../../components/ui/FormField";
+import EmptyState from "../../components/ui/EmptyState";
+import { SkeletonCard } from "../../components/ui/Skeleton";
 import Toast from "../../components/Toast";
 import useToast from "../../hooks/useToast";
 import { fetchProjects, createProject, updateProject, deleteProject } from "../../Redux/slices/ManagerSlice";
+
+const STATUSES = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED"];
 
 const STATUS_COLORS = {
   NOT_STARTED: "bg-base-300 text-base-content/60",
@@ -54,11 +58,18 @@ export default function ProjectsPage() {
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-40 animate-pulse rounded-2xl bg-base-200" />
-          ))
+          Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
         ) : projects.length === 0 ? (
-          <p className="col-span-full py-10 text-center text-sm text-base-content/40">No projects yet.</p>
+          <EmptyState
+            icon={<FolderKanban size={24} />}
+            title="No projects yet"
+            description="Create your first project to start assigning tasks and tracking progress."
+            action={
+              <button onClick={() => { setEditingProject(null); setShowModal(true); }} className="btn btn-primary btn-sm rounded-lg">
+                <Plus size={14} /> New Project
+              </button>
+            }
+          />
         ) : (
           projects.map((p) => (
             <div key={p._id} className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
@@ -144,6 +155,7 @@ function ProjectFormModal({ project, onClose, onSubmit }) {
     description: project?.description || "",
     startDate: project?.startDate?.slice(0, 10) || "",
     endDate: project?.endDate?.slice(0, 10) || "",
+    status: project?.status || "NOT_STARTED",
   });
   const [saving, setSaving] = useState(false);
 
@@ -154,7 +166,8 @@ function ProjectFormModal({ project, onClose, onSubmit }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
-    await onSubmit(form);
+    const payload = project ? form : { ...form, status: undefined };
+    await onSubmit(payload);
     setSaving(false);
   }
 
@@ -173,6 +186,16 @@ function ProjectFormModal({ project, onClose, onSubmit }) {
           <FormField label="Start Date" type="date" name="startDate" value={form.startDate} onChange={handleChange} required />
           <FormField label="End Date" type="date" name="endDate" value={form.endDate} onChange={handleChange} />
         </div>
+
+        {project && (
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-base-content/40">Status</label>
+            <select name="status" value={form.status} onChange={handleChange} className="select select-bordered w-full">
+              {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+            </select>
+          </div>
+        )}
+
         <button type="submit" disabled={saving} className="btn btn-primary w-full rounded-xl">
           {saving ? "Saving..." : project ? "Save Changes" : "Create Project"}
         </button>

@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Send, MessageSquare } from "lucide-react";
-import { fetchTaskComments, addTaskComment } from "../Redux/slices/CommentSlice";
+import { Send, MessageSquare, Pencil, Trash2, Check, X } from "lucide-react";
+import {
+  fetchTaskComments,
+  addTaskComment,
+  editTaskComment,
+  deleteTaskComment,
+} from "../Redux/slices/CommentSlice";
 
 const ROLE_LABEL = {
   ADMIN: "Admin",
@@ -18,10 +23,16 @@ const ROLE_STYLE = {
 export default function CommentThread({ taskId }) {
   const dispatch = useDispatch();
   const { byTaskId, loading } = useSelector((state) => state.comments);
+  const { user: currentUser } = useSelector((state) => state.auth);
   const comments = byTaskId[taskId] || [];
 
   const [message, setMessage] = useState("");
   const [posting, setPosting] = useState(false);
+
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     dispatch(fetchTaskComments(taskId));
@@ -34,6 +45,46 @@ export default function CommentThread({ taskId }) {
     const result = await dispatch(addTaskComment({ taskId, message }));
     setPosting(false);
     if (addTaskComment.fulfilled.match(result)) setMessage("");
+  }
+
+  function startEdit(comment) {
+    setEditingId(comment._id);
+    setEditText(comment.message);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText("");
+  }
+
+  async function saveEdit(commentId) {
+    if (!editText.trim()) return;
+    setSavingEdit(true);
+    const result = await dispatch(editTaskComment({ taskId, commentId, message: editText }));
+    setSavingEdit(false);
+    if (editTaskComment.fulfilled.match(result)) {
+      setEditingId(null);
+      setEditText("");
+    }
+  }
+
+  async function handleDelete(commentId) {
+    if (!window.confirm("Delete this comment?")) return;
+    setDeletingId(commentId);
+    await dispatch(deleteTaskComment({ taskId, commentId }));
+    setDeletingId(null);
+  }
+
+  function canEdit(comment) {
+    return comment.user?._id === currentUser?._id;
+  }
+
+  function canDelete(comment) {
+    return (
+      comment.user?._id === currentUser?._id ||
+      currentUser?.role === "PROJECT_MANAGER" ||
+      currentUser?.role === "ADMIN"
+    );
   }
 
   return (
@@ -51,18 +102,63 @@ export default function CommentThread({ taskId }) {
           comments.map((c) => (
             <div
               key={c._id}
-              className={`rounded-xl border px-3 py-2 ${ROLE_STYLE[c.user?.role] || "bg-base-200 border-base-300"}`}
+              className={`group rounded-xl border px-3 py-2 ${ROLE_STYLE[c.user?.role] || "bg-base-200 border-base-300"}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-semibold text-base-content">
                   {c.user?.name}{" "}
                   <span className="font-normal text-base-content/40">· {ROLE_LABEL[c.user?.role] || c.user?.role}</span>
                 </p>
-                <p className="shrink-0 text-[10px] text-base-content/40">
-                  {c.createdAt ? new Date(c.createdAt).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
-                </p>
+                <div className="flex shrink-0 items-center gap-2">
+                  <p className="text-[10px] text-base-content/40">
+                    {c.createdAt
+                      ? new Date(c.createdAt).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                      : ""}
+                  </p>
+                  <div className="hidden items-center gap-1 group-hover:flex">
+                    {canEdit(c) && editingId !== c._id && (
+                      <button onClick={() => startEdit(c)} className="text-base-content/40 hover:text-primary" title="Edit">
+                        <Pencil size={12} />
+                      </button>
+                    )}
+                    {canDelete(c) && (
+                      <button
+                        onClick={() => handleDelete(c._id)}
+                        disabled={deletingId === c._id}
+                        className="text-base-content/40 hover:text-red-500"
+                        title="Delete"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <p className="mt-1 text-sm text-base-content/80">{c.message}</p>
+
+              {editingId === c._id ? (
+                <div className="mt-1.5 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="flex-1 rounded-lg border border-primary/40 bg-base-100 px-2 py-1 text-sm text-base-content outline-none"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => saveEdit(c._id)}
+                    disabled={savingEdit}
+                    className="text-emerald-500 hover:opacity-80"
+                    title="Save"
+                  >
+                    <Check size={16} />
+                  </button>
+                  <button onClick={cancelEdit} className="text-base-content/40 hover:text-red-500" title="Cancel">
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-base-content/80">{c.message}</p>
+              )}
             </div>
           ))
         )}

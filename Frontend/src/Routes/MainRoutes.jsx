@@ -15,6 +15,10 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import ForgotPassword from "../Pages/Auth/ForgotPassword";
 import ResetPassword from "../Pages/Auth/ResetPassword";
 import Profile from "../Pages/Profile";
+import AdminProjectsPage from "../Pages/Admin/AdminProjectsPage";
+import Terms from "../Pages/Terms";
+import Privacy from "../Pages/Privacy";
+import NotFound from "../Pages/NotFound";
 
 function MainRoutes(){
     return (
@@ -22,6 +26,9 @@ function MainRoutes(){
             <Route path="/login" element={<Login/>} />
             <Route path="/signup" element={<Signup/>} />
             <Route path="/" element={<Home />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="*" element={<NotFound />} />
 
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["ADMIN"]}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["ADMIN"]}><UserManagement /></ProtectedRoute>} />
@@ -37,6 +44,8 @@ function MainRoutes(){
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+            <Route path="/admin/projects" element={<ProtectedRoute allowedRoles={["ADMIN"]}><AdminProjectsPage /></ProtectedRoute>} />
         </Routes>
     )
 }

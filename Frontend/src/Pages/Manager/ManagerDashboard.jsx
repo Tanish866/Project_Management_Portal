@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { FolderKanban, ListChecks, CheckCircle2, Clock, Plus, ArrowRight } from "lucide-react";
 import ManagerLayout from "../../Layouts/ManagerLayout";
+import EmptyState from "../../components/ui/EmptyState";
 import { fetchManagerDashboard, fetchProjects } from "../../Redux/slices/ManagerSlice";
 
 export default function ManagerDashboard() {
@@ -59,7 +60,11 @@ export default function ManagerDashboard() {
 
         <div className="mt-4 space-y-1">
           {recentProjects.length === 0 ? (
-            <p className="py-6 text-center text-sm text-base-content/40">No projects yet. Create your first one.</p>
+            <EmptyState
+              icon={<FolderKanban size={22} />}
+              title="No projects yet"
+              description="Create your first project to get started."
+            />
           ) : (
             recentProjects.map((p) => (
               <Link
